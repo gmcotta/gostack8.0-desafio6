@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import api from '../../services/api';
 
@@ -17,6 +17,14 @@ import {
   Author,
 } from './styles';
 
+const styles = StyleSheet.create({
+  loadingIcon: {
+    flex: 1,
+    justifyContent: 'center',
+    alignContent: 'center',
+  },
+});
+
 export default class User extends Component {
   static navigationOptions = ({ navigation }) => ({
     title: navigation.getParam('user').name,
@@ -30,20 +38,23 @@ export default class User extends Component {
 
   state = {
     stars: [],
+    loading: false,
   };
 
   async componentDidMount() {
+    this.setState({ loading: true });
+
     const { navigation } = this.props;
     const user = navigation.getParam('user');
 
     const response = await api.get(`/users/${user.login}/starred`);
-    this.setState({ stars: response.data });
+    this.setState({ stars: response.data, loading: false });
   }
 
   render() {
     const { navigation } = this.props;
     const user = navigation.getParam('user');
-    const { stars } = this.state;
+    const { stars, loading } = this.state;
 
     return (
       <Container>
@@ -52,19 +63,27 @@ export default class User extends Component {
           <Name>{user.name}</Name>
           <Bio>{user.bio}</Bio>
         </Header>
-        <Stars
-          data={stars}
-          keyExtractor={star => String(star.id)}
-          renderItem={({ item }) => (
-            <Starred>
-              <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
-              <Info>
-                <Title>{item.name}</Title>
-                <Author>{item.owner.login}</Author>
-              </Info>
-            </Starred>
-          )}
-        />
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#7159c1"
+            style={styles.loadingIcon}
+          />
+        ) : (
+          <Stars
+            data={stars}
+            keyExtractor={star => String(star.id)}
+            renderItem={({ item }) => (
+              <Starred>
+                <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
+                <Info>
+                  <Title>{item.name}</Title>
+                  <Author>{item.owner.login}</Author>
+                </Info>
+              </Starred>
+            )}
+          />
+        )}
       </Container>
     );
   }
